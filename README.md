@@ -1,4 +1,4 @@
-# Creatung Fashin DB Tables  
+# Creating Fashin DB Tables  
 
 ## Project Overview  
 
