@@ -1,227 +1,151 @@
-# Retail Sales Analysis SQL Project
+# Creatung Fashin DB Tables
 
 ## Project Overview
 
-**Project Title**: Retail Sales Analysis  
-**Level**: Beginner  
-**Database**: `p1_retail_db`
+**Project Title**: Creating table of Fashin Databse by implementing DDL 
+**Database**: `fashion_db`
 
-This project is designed to demonstrate SQL skills and techniques typically used by data analysts to explore, clean, and analyze retail sales data. The project involves setting up a retail sales database, performing exploratory data analysis (EDA), and answering specific business questions through SQL queries. This project is ideal for those who are starting their journey in data analysis and want to build a solid foundation in SQL.
+The purpose of this project is to demostrate the SQL skills and tecjniques that are required to create tables associated with a database from scratch. For creating this porject, an **ER Diagram** was followed which can be can be seen from the **fashion_db_er_diagram.png** file uploaded in this repository.
 
 ## Objectives
 
-1. **Set up a retail sales database**: Create and populate a retail sales database with the provided sales data.
-2. **Data Cleaning**: Identify and remove any records with missing or null values.
-3. **Exploratory Data Analysis (EDA)**: Perform basic exploratory data analysis to understand the dataset.
-4. **Business Analysis**: Use SQL to answer specific business questions and derive insights from the sales data.
+1. Creating all tables associated with the Fashion DB
+2. Indexing 
 
-## Project Structure
+## SQL CODE FOR CREATING FASHION DB TABLES
 
-### 1. Database Setup
+DROP DATABASE IF EXISTS FASHION_DB;
+CREATE DATABASE IF NOT EXISTS FASHION_DB; 
 
-- **Database Creation**: The project starts by creating a database named `p1_retail_db`.
-- **Table Creation**: A table named `retail_sales` is created to store the sales data. The table structure includes columns for transaction ID, sale date, sale time, customer ID, gender, age, product category, quantity sold, price per unit, cost of goods sold (COGS), and total sale amount.
+-- Defining the fashion db database for safety
+USE FASHION_DB; 
 
-```sql
-CREATE DATABASE p1_retail_db;
-
-CREATE TABLE retail_sales
-(
-    transactions_id INT PRIMARY KEY,
-    sale_date DATE,	
-    sale_time TIME,
-    customer_id INT,	
-    gender VARCHAR(10),
-    age INT,
-    category VARCHAR(35),
-    quantity INT,
-    price_per_unit FLOAT,	
-    cogs FLOAT,
-    total_sale FLOAT
+-- suppliers table
+CREATE TABLE suppliers (
+    supplier_id INT PRIMARY KEY AUTO_INCREMENT,
+    supplier_name VARCHAR(100) NOT NULL,
+    supplier_type ENUM("Individual", "Consignment Partner", "Business") NOT NULL,
+    contact_email VARCHAR(100),
+    contact_phone VARCHAR(20),
+    country VARCHAR(50) NOT NULL,
+    city VARCHAR(50),
+    registration_date DATE NOT NULL
 );
-```
 
-### 2. Data Exploration & Cleaning
+-- brands table
+CREATE TABLE brands (
+    brand_id INT PRIMARY KEY AUTO_INCREMENT,
+    brand_name VARCHAR(50) NOT NULL UNIQUE,
+    country_of_origin VARCHAR(50)
+);
 
-- **Record Count**: Determine the total number of records in the dataset.
-- **Customer Count**: Find out how many unique customers are in the dataset.
-- **Category Count**: Identify all unique product categories in the dataset.
-- **Null Value Check**: Check for any null values in the dataset and delete records with missing data.
+-- categories table
+CREATE TABLE categories (
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
+    category_name VARCHAR(50) NOT NULL UNIQUE,
+    parent_category_id INT, -- For assigning subcategories under a specific category
+    FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)
+);
 
-```sql
-SELECT COUNT(*) FROM retail_sales;
-SELECT COUNT(DISTINCT customer_id) FROM retail_sales;
-SELECT DISTINCT category FROM retail_sales;
+-- conditions table
+CREATE TABLE conditions (
+    condition_id INT PRIMARY KEY AUTO_INCREMENT,
+    condition_name VARCHAR(30) NOT NULL UNIQUE, -- Product conditions can be  Excellent, Very Good, Good, Fair etc.
+    description TEXT -- For detail description regarding the product conditions
+);
 
-SELECT * FROM retail_sales
-WHERE 
-    sale_date IS NULL OR sale_time IS NULL OR customer_id IS NULL OR 
-    gender IS NULL OR age IS NULL OR category IS NULL OR 
-    quantity IS NULL OR price_per_unit IS NULL OR cogs IS NULL;
+-- products table (Captures details at the time of acquisition)
+CREATE TABLE products (
+    product_id INT PRIMARY KEY AUTO_INCREMENT,
+    brand_id INT NOT NULL,
+    category_id INT NOT NULL,
+    supplier_id INT NOT NULL,
+    purchase_date DATE NOT NULL,
+    purchase_price DECIMAL(10, 2) NOT NULL,
+    product_name VARCHAR(150) NOT NULL, -- e.g., "Chanel Classic Flap Bag Medium Black Caviar SHW"
+    description TEXT,
+    material VARCHAR(50),
+    color VARCHAR(30),
+    size VARCHAR(30),
+    serial_number VARCHAR(50) UNIQUE, -- Serial number may or may not be availale
+    initial_condition_id INT NOT NULL,
+    acquisition_notes TEXT,
+    FOREIGN KEY (brand_id) REFERENCES brands(brand_id),
+    FOREIGN KEY (category_id) REFERENCES categories(category_id),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id),
+    FOREIGN KEY (initial_condition_id) REFERENCES conditions(condition_id)
+);
 
-DELETE FROM retail_sales
-WHERE 
-    sale_date IS NULL OR sale_time IS NULL OR customer_id IS NULL OR 
-    gender IS NULL OR age IS NULL OR category IS NULL OR 
-    quantity IS NULL OR price_per_unit IS NULL OR cogs IS NULL;
-```
+-- authentication_log table
+CREATE TABLE authentication_log (
+    auth_log_id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    auth_date DATE NOT NULL,
+    authenticator_name VARCHAR(100),
+    auth_status ENUM("Pending", "Authenticated", "Counterfeit", "Unable to Verify") NOT NULL,
+    auth_cost DECIMAL(8, 2) DEFAULT 0,
+    notes TEXT,
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
 
-### 3. Data Analysis & Findings
+-- inventory_items table (For tracking the lifecycle of a product after acquisition)
+CREATE TABLE inventory_items (
+    inventory_item_id INT PRIMARY KEY AUTO_INCREMENT, -- Unique ID for the inventory record
+    product_id INT NOT NULL, -- Foreign key to products, NOT UNIQUE here
+    sku VARCHAR(50) UNIQUE NOT NULL, -- Unique Stock Keeping Unit
+    date_received DATE NOT NULL, -- Date item physically received/processed
+    current_condition_id INT NOT NULL,
+    listing_price DECIMAL(10, 2),
+    date_listed DATE,
+    status ENUM("Processing", "In Stock", "Reserved", "Sold", "Returned", "Withdrawn") NOT NULL DEFAULT "Processing",
+    location VARCHAR(50), -- e.g., Warehouse A, Photography, Repair
+    last_status_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    FOREIGN KEY (current_condition_id) REFERENCES conditions(condition_id)
+);
 
-The following SQL queries were developed to answer specific business questions:
+-- customers table
+CREATE TABLE customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    registration_date DATE NOT NULL,
+    last_login_date TIMESTAMP
+);
 
-1. **Write a SQL query to retrieve all columns for sales made on '2022-11-05**:
-```sql
-SELECT *
-FROM retail_sales
-WHERE sale_date = '2022-11-05';
-```
+-- sales_orders table
+CREATE TABLE sales_orders (
+    order_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(12, 2) NOT NULL,
+    shipping_address TEXT NOT NULL,
+    billing_address TEXT,
+    shipping_cost DECIMAL(8, 2) DEFAULT 0,
+    order_status ENUM("Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled", "Returned") NOT NULL,
+    tracking_number VARCHAR(100),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
 
-2. **Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is more than 4 in the month of Nov-2022**:
-```sql
-SELECT 
-  *
-FROM retail_sales
-WHERE 
-    category = 'Clothing'
-    AND 
-    TO_CHAR(sale_date, 'YYYY-MM') = '2022-11'
-    AND
-    quantity >= 4
-```
+-- order_items table (Linking orders to specific inventory items)
+CREATE TABLE order_items (
+    order_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    inventory_item_id INT NOT NULL UNIQUE, -- An inventory item can only be sold once
+    selling_price DECIMAL(10, 2) NOT NULL, -- Price at the time of sale
+    discount_amount DECIMAL(10, 2) DEFAULT 0,
+    FOREIGN KEY (order_id) REFERENCES sales_orders(order_id),
+    FOREIGN KEY (inventory_item_id) REFERENCES inventory_items(inventory_item_id)
+);
 
-3. **Write a SQL query to calculate the total sales (total_sale) for each category.**:
-```sql
-SELECT 
-    category,
-    SUM(total_sale) as net_sale,
-    COUNT(*) as total_orders
-FROM retail_sales
-GROUP BY 1
-```
-
-4. **Write a SQL query to find the average age of customers who purchased items from the 'Beauty' category.**:
-```sql
-SELECT
-    ROUND(AVG(age), 2) as avg_age
-FROM retail_sales
-WHERE category = 'Beauty'
-```
-
-5. **Write a SQL query to find all transactions where the total_sale is greater than 1000.**:
-```sql
-SELECT * FROM retail_sales
-WHERE total_sale > 1000
-```
-
-6. **Write a SQL query to find the total number of transactions (transaction_id) made by each gender in each category.**:
-```sql
-SELECT 
-    category,
-    gender,
-    COUNT(*) as total_trans
-FROM retail_sales
-GROUP 
-    BY 
-    category,
-    gender
-ORDER BY 1
-```
-
-7. **Write a SQL query to calculate the average sale for each month. Find out best selling month in each year**:
-```sql
-SELECT 
-       year,
-       month,
-    avg_sale
-FROM 
-(    
-SELECT 
-    EXTRACT(YEAR FROM sale_date) as year,
-    EXTRACT(MONTH FROM sale_date) as month,
-    AVG(total_sale) as avg_sale,
-    RANK() OVER(PARTITION BY EXTRACT(YEAR FROM sale_date) ORDER BY AVG(total_sale) DESC) as rank
-FROM retail_sales
-GROUP BY 1, 2
-) as t1
-WHERE rank = 1
-```
-
-8. **Write a SQL query to find the top 5 customers based on the highest total sales **:
-```sql
-SELECT 
-    customer_id,
-    SUM(total_sale) as total_sales
-FROM retail_sales
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 5
-```
-
-9. **Write a SQL query to find the number of unique customers who purchased items from each category.**:
-```sql
-SELECT 
-    category,    
-    COUNT(DISTINCT customer_id) as cnt_unique_cs
-FROM retail_sales
-GROUP BY category
-```
-
-10. **Write a SQL query to create each shift and number of orders (Example Morning <12, Afternoon Between 12 & 17, Evening >17)**:
-```sql
-WITH hourly_sale
-AS
-(
-SELECT *,
-    CASE
-        WHEN EXTRACT(HOUR FROM sale_time) < 12 THEN 'Morning'
-        WHEN EXTRACT(HOUR FROM sale_time) BETWEEN 12 AND 17 THEN 'Afternoon'
-        ELSE 'Evening'
-    END as shift
-FROM retail_sales
-)
-SELECT 
-    shift,
-    COUNT(*) as total_orders    
-FROM hourly_sale
-GROUP BY shift
-```
-
-## Findings
-
-- **Customer Demographics**: The dataset includes customers from various age groups, with sales distributed across different categories such as Clothing and Beauty.
-- **High-Value Transactions**: Several transactions had a total sale amount greater than 1000, indicating premium purchases.
-- **Sales Trends**: Monthly analysis shows variations in sales, helping identify peak seasons.
-- **Customer Insights**: The analysis identifies the top-spending customers and the most popular product categories.
-
-## Reports
-
-- **Sales Summary**: A detailed report summarizing total sales, customer demographics, and category performance.
-- **Trend Analysis**: Insights into sales trends across different months and shifts.
-- **Customer Insights**: Reports on top customers and unique customer counts per category.
-
-## Conclusion
-
-This project serves as a comprehensive introduction to SQL for data analysts, covering database setup, data cleaning, exploratory data analysis, and business-driven SQL queries. The findings from this project can help drive business decisions by understanding sales patterns, customer behavior, and product performance.
-
-## How to Use
-
-1. **Clone the Repository**: Clone this project repository from GitHub.
-2. **Set Up the Database**: Run the SQL scripts provided in the `database_setup.sql` file to create and populate the database.
-3. **Run the Queries**: Use the SQL queries provided in the `analysis_queries.sql` file to perform your analysis.
-4. **Explore and Modify**: Feel free to modify the queries to explore different aspects of the dataset or answer additional business questions.
-
-## Author - Zero Analyst
-
-This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. If you have any questions, feedback, or would like to collaborate, feel free to get in touch!
-
-### Stay Updated and Join the Community
-
-For more content on SQL, data analysis, and other data-related topics, make sure to follow me on social media and join our community:
-
-- **YouTube**: [Subscribe to my channel for tutorials and insights](https://www.youtube.com/@zero_analyst)
-- **Instagram**: [Follow me for daily tips and updates](https://www.instagram.com/zero_analyst/)
-- **LinkedIn**: [Connect with me professionally](https://www.linkedin.com/in/najirr)
-- **Discord**: [Join our community to learn and grow together](https://discord.gg/36h5f2Z5PK)
-
-Thank you for your support, and I look forward to connecting with you!
+-- Indexing for faster query executions. I am ssuming the following fields will be used more frequantly for analysis
+CREATE INDEX idx_product_brand ON products(brand_id);
+CREATE INDEX idx_product_category ON products(category_id);
+CREATE INDEX idx_product_supplier ON products(supplier_id);
+CREATE INDEX idx_inventory_status ON inventory_items(status);
+CREATE INDEX idx_inventory_date_listed ON inventory_items(date_listed);
+CREATE INDEX idx_order_customer ON sales_orders(customer_id);
+CREATE INDEX idx_order_date ON sales_orders(order_date);
+CREATE INDEX idx_order_status ON sales_orders(order_status);
