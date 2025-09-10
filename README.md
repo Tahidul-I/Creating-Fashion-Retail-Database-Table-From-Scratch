@@ -1,0 +1,1 @@
+# Creating-Fashion-Retail-Database-Table-From-Scratch
