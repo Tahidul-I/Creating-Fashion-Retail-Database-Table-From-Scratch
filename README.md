@@ -1,24 +1,24 @@
-# Creatung Fashin DB Tables
+# Creatung Fashin DB Tables  
 
-## Project Overview
+## Project Overview  
 
-**Project Title**: Creating table of Fashin Databse by implementing DDL 
-**Database**: `fashion_db`
+**Project Title**: Creating Fashion DB tables by implementing DDL   
+**Database**: `fashion_db`  
 
-The purpose of this project is to demostrate the SQL skills and tecjniques that are required to create tables associated with a database from scratch. For creating this porject, an **ER Diagram** was followed which can be can be seen from the **fashion_db_er_diagram.png** file uploaded in this repository.
+The purpose of this project is to demonstrate the SQL skills and techniques that are required to create tables associated with a database from scratch. For creating this porject, an **ER Diagram** was followed which can be  seen from the **fashion_db_er_diagram.png** file uploaded in this repository.  
 
 ## Objectives
 
 1. Creating all tables associated with the Fashion DB
 2. Indexing 
+  
+## SQL CODE FOR CREATING FASHION DB TABLES  
 
-## SQL CODE FOR CREATING FASHION DB TABLES
+DROP DATABASE IF EXISTS FASHION_DB;  
+CREATE DATABASE IF NOT EXISTS FASHION_DB;  
 
-DROP DATABASE IF EXISTS FASHION_DB;
-CREATE DATABASE IF NOT EXISTS FASHION_DB; 
-
--- Defining the fashion db database for safety
-USE FASHION_DB; 
+-- Defining the fashion db database for safety  
+USE FASHION_DB;   
 
 -- suppliers table
 CREATE TABLE suppliers (
